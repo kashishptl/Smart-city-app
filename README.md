@@ -1,2 +1,3 @@
-# Smart-city-app
-The Smart City Web Application is a dynamic, interactive platform built using JavaScript, AngularJS (1.x), Node.js, and MongoDB. Its main goal is to provide citizens with real-time information such as weather updates, tasks, and city services, all inside one centralized digital system.
+🌆 Smart City Web Application
+
+A modern Smart City Web Application built using AngularJS, JavaScript, Node.js, and MongoDB, designed to provide real-time weather insights, personalized suggestions, and a powerful task management system—packed inside a clean, responsive UI.
