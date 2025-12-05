@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Smart City App</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body ng-app="smartCityApp">
+  <nav class="navbar navbar-dark bg-primary">
+    <div class="container">
+      <a class="navbar-brand" href="#">Smart City Dashboard</a>
+      <span class="navbar-text text-white">Monitor cities and weather</span>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <div ng-view></div>
+  </div>
+
+  <!-- Templates -->
+  <script type="text/ng-template" id="main.html">
+    <div class="row">
+      <!-- City Management Column -->
+      <div class="col-md-6">
+        <div class="card mb-4">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Cities</h3>
+            <button class="btn btn-light btn-sm" ng-click="refreshCities()">
+              <span ng-if="citiesLoading" class="spinner-border spinner-border-sm" role="status"></span>
+              Refresh
+            </button>
+          </div>
+          <div class="card-body">
+            <form name="cityForm" ng-submit="addCity()" novalidate>
+              <div class="form-group">
+                <label for="cityName">City Name</label>
+                <input type="text" id="cityName" class="form-control" ng-model="newCity.name" 
+                       ng-class="{'is-invalid': formErrors.name}" required>
+                <div class="invalid-feedback" ng-show="formErrors.name">{{formErrors.name}}</div>
+              </div>
+              <div class="form-group">
+                <label for="country">Country</label>
+                <input type="text" id="country" class="form-control" ng-model="newCity.country" 
+                       ng-class="{'is-invalid': formErrors.country}" required>
+                <div class="invalid-feedback" ng-show="formErrors.country">{{formErrors.country}}</div>
+              </div>
+              <div class="form-group">
+                <label for="latitude">Latitude</label>
+                <input type="number" id="latitude" class="form-control" ng-model="newCity.latitude" 
+                       step="0.000001" min="-90" max="90" 
+                       ng-class="{'is-invalid': formErrors.latitude}" required>
+                <div class="invalid-feedback" ng-show="formErrors.latitude">{{formErrors.latitude}}</div>
+              </div>
+              <div class="form-group">
+                <label for="longitude">Longitude</label>
+                <input type="number" id="longitude" class="form-control" ng-model="newCity.longitude" 
+                       step="0.000001" min="-180" max="180" 
+                       ng-class="{'is-invalid': formErrors.longitude}" required>
+                <div class="invalid-feedback" ng-show="formErrors.longitude">{{formErrors.longitude}}</div>
+              </div>
+              <div class="alert alert-danger" ng-if="addError">{{addError}}</div>
+              <div class="alert alert-success" ng-if="addSuccess">{{addSuccess}}</div>
+              <button type="submit" class="btn btn-primary">
+                <span ng-if="addingCity" class="spinner-border spinner-border-sm" role="status"></span>
+                Add City
+              </button>
+            </form>
+          </div>
+        </div>
+        
+        <!-- City List -->
+        <div class="alert alert-info" ng-if="citiesLoading">
+          <span class="spinner-border spinner-border-sm" role="status"></span>
+          Loading cities...
+        </div>
+        <div class="alert alert-danger" ng-if="citiesError">
+          Error loading cities: {{citiesError}}
+        </div>
+        <div class="alert alert-info" ng-if="cities.length === 0 && !citiesLoading && !citiesError">
+          No cities added yet. Add your first city above.
+        </div>
+        
+        <div class="city-card card" ng-repeat="city in cities">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="card-title mb-0">{{city.name}}, {{city.country}}</h5>
+              <div class="btn-group">
+                <button class="btn btn-info btn-sm" ng-click="showWeather(city)">
+                  <span ng-if="weatherLoading && selectedCity._id === city._id" 
+                        class="spinner-border spinner-border-sm" role="status"></span>
+                  Weather
+                </button>
+                <button class="btn btn-success btn-sm" ng-click="showOnMap(city)">Map</button>
+                <button class="btn btn-danger btn-sm" ng-click="deleteCity(city)">
+                  <span ng-if="deletingCity === city._id" 
+                        class="spinner-border spinner-border-sm" role="status"></span>
+                  Delete
+                </button>
+              </div>
+            </div>
+            <p class="card-text text-muted mt-2">
+              <small>Location: {{city.latitude | number:4}}°, {{city.longitude | number:4}}°</small>
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Map and Weather Column -->
+      <div class="col-md-6">
+        <!-- Map Section -->
+        <div class="card mb-4">
+          <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Map</h3>
+          </div>
+          <div class="card-body p-0">
+            <div class="alert alert-info m-3" ng-if="mapLoading">
+              <span class="spinner-border spinner-border-sm" role="status"></span>
+              Loading map...
+            </div>
+            <div class="alert alert-danger m-3" ng-if="mapError">
+              {{mapError}}
+            </div>
+            <div id="map"></div>
+          </div>
+        </div>
+        
+        <!-- Weather Section -->
+        <div class="card" ng-if="weatherLoading || weatherData || weatherError">
+          <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Weather Information</h3>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-info" ng-if="weatherLoading">
+              <span class="spinner-border spinner-border-sm" role="status"></span>
+              Loading weather data for {{selectedCity.name}}...
+            </div>
+            
+            <div class="alert alert-danger" ng-if="weatherError">
+              {{weatherError}}
+            </div>
+            
+            <div class="weather-info" ng-if="weatherData && !weatherLoading">
+              <h4>Weather in {{selectedCity.name}}, {{selectedCity.country}}</h4>
+              <div class="row align-items-center">
+                <div class="col-md-8">
+                  <div class="d-flex align-items-center">
+                    <span class="temperature">{{weatherData.main.temp | number:1}}°C</span>
+                    <span class="feels-like ml-2">
+                      feels like {{weatherData.main.feels_like | number:1}}°C
+                    </span>
+                  </div>
+                  <p class="weather-description text-capitalize">
+                    {{weatherData.weather[0].description}}
+                  </p>
+                  
+                  <div class="weather-details">
+                    <div class="row">
+                      <div class="col-6">
+                        <p>Humidity: {{weatherData.main.humidity}}%</p>
+                        <p>Pressure: {{weatherData.main.pressure}} hPa</p>
+                      </div>
+                      <div class="col-6">
+                        <p>Wind: {{weatherData.wind.speed}} m/s</p>
+                        <p>Visibility: {{weatherData.visibility / 1000}} km</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4 text-center">
+                  <img class="weather-icon" 
+                       ng-src="https://openweathermap.org/img/wn/{{weatherData.weather[0].icon}}@2x.png" 
+                       alt="{{weatherData.weather[0].description}}">
+                </div>
+              </div>
+              
+              <div class="sunrise-sunset mt-3">
+                <p>
+                  <strong>Sunrise:</strong> 
+                  {{weatherData.sys.sunrise * 1000 | date:'HH:mm'}}
+                  <strong class="ml-3">Sunset:</strong> 
+                  {{weatherData.sys.sunset * 1000 | date:'HH:mm'}}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </script>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular-route.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

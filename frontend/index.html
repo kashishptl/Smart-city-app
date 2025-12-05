@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Smart City Weather</title>
+  <script>
+    async function getWeather() {
+      const city = document.getElementById('city').value;
+      const res = await fetch(`http://localhost:3000/api/weather?city=${city}`);
+      const data = await res.json();
+      document.getElementById('result').innerText =
+        `Weather in ${data.name}: ${data.main.temp}°C`;
+    }
+  </script>
+</head>
+<body>
+  <h1>Smart City Weather</h1>
+  <input id="city" placeholder="Enter city name" />
+  <button onclick="getWeather()">Get Weather</button>
+  <p id="result"></p>
+</body>
+</html>

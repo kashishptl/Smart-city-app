@@ -1,0 +1,26 @@
+{
+  "name": "smart-city-app",
+  "version": "1.0.0",
+  "description": "A simple smart city application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "express-rate-limit": "^6.9.0",
+    "helmet": "^7.0.0",
+    "mongoose": "^7.8.7",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "type": "module"
+}
